@@ -1,0 +1,27 @@
+CREATE TABLE IF NOT EXISTS patients (
+  id SERIAL PRIMARY KEY,
+  fullname VARCHAR(255) NOT NULL,
+  gender VARCHAR(10) NOT NULL,
+  age INTEGER NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  address TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS appointments (
+  id SERIAL PRIMARY KEY,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  appointment_date DATE NOT NULL,
+  reason TEXT NOT NULL,
+  status VARCHAR(20) DEFAULT 'Pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(100) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO users (username, password) VALUES ('admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi') ON CONFLICT (username) DO NOTHING;
