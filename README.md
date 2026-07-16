@@ -1,36 +1,41 @@
-# ClinicCare - Simple Clinic Management System
+# ClinicCare — Clinic Management System
 
-A full-stack clinic management system built with React, Express, and PostgreSQL. Deployed on AWS ECS Fargate with CI/CD pipeline.
+A full-stack, cloud-native clinic management system built to digitize patient records and appointment scheduling for small clinics. Deployed on AWS ECS Fargate with CI/CD pipeline.
+
+## The Problem
+
+Many small clinics still rely on paper records, leading to:
+- Lost patient records
+- Long waiting times
+- Double-booked appointments
+- Difficult reporting
+
+**ClinicCare** solves this with a simple, secure web application.
 
 ## Features
 
-- **Admin Login** - Secure JWT authentication
-- **Dashboard** - Total patients and today's appointments
-- **Patient Management** - Add, view, edit, delete patients
-- **Appointment Management** - Book, view, complete, cancel appointments
+- **Admin Authentication** — Secure JWT login with bcrypt password hashing
+- **Dashboard** — Total patients count and today's appointments overview
+- **Patient Management** — Full CRUD: add, view, edit, delete patients
+- **Appointment Management** — Book, view, complete, cancel appointments
+- **Rate Limiting** — Protection against abuse (100 req/15min, 10 login attempts/15min)
+- **Security Headers** — Helmet.js for HTTP security headers
 
 ## Tech Stack
 
-| Layer     | Technology         |
-|-----------|--------------------|
-| Frontend  | React, Vite, Tailwind CSS |
-| Backend   | Node.js, Express   |
-| Database  | PostgreSQL         |
-| Container | Docker, Docker Compose |
-| Cloud     | AWS ECS Fargate, S3, ALB, RDS |
+| Layer       | Technology                          |
+|-------------|-------------------------------------|
+| Frontend    | React 19, Vite 8, Tailwind CSS      |
+| Backend     | Node.js 20, Express 5               |
+| Database    | PostgreSQL 16                       |
+| Auth        | JWT (jsonwebtoken + bcryptjs)       |
+| Security    | Helmet.js, express-rate-limit        |
+| Containers  | Docker, Docker Compose              |
+| Cloud       | AWS ECS Fargate, S3, ALB, RDS, ECR  |
+| CI/CD       | AWS CodePipeline, CodeBuild         |
+| Monitoring  | Amazon CloudWatch                   |
 
-## Project Structure
-
-```
-cliniccare/
-├── frontend/          # React application
-├── backend/           # Express API
-├── database/          # SQL migrations
-├── docker-compose.yml
-└── README.md
-```
-
-## Local Development
+## Quick Start
 
 ### Prerequisites
 - Node.js 20+
@@ -43,9 +48,9 @@ cliniccare/
 docker-compose up --build
 ```
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-- Database: localhost:5432
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:5000
+- **Database:** localhost:5432
 
 ### Option 2: Manual Setup
 
@@ -53,13 +58,14 @@ docker-compose up --build
 ```bash
 createdb cliniccare
 psql -d cliniccare -f backend/database/migrations/001_init.sql
+cd backend && node seed_admin.js
 ```
 
 **Backend:**
 ```bash
 cd backend
 npm install
-npm start
+npm run dev
 ```
 
 **Frontend:**
@@ -69,23 +75,65 @@ npm install
 npm run dev
 ```
 
-## API Endpoints
+### Default Login
 
-| Method | Endpoint                | Description        | Auth |
-|--------|-------------------------|--------------------|------|
-| POST   | /api/auth/login         | Login              | No   |
-| GET    | /api/patients/dashboard | Dashboard stats    | Yes  |
-| GET    | /api/patients           | List patients      | Yes  |
-| GET    | /api/patients/:id       | Get patient        | Yes  |
-| POST   | /api/patients           | Create patient     | Yes  |
-| PUT    | /api/patients/:id       | Update patient     | Yes  |
-| DELETE | /api/patients/:id       | Delete patient     | Yes  |
-| GET    | /api/appointments       | List appointments  | Yes  |
-| POST   | /api/appointments       | Book appointment   | Yes  |
-| PUT    | /api/appointments/:id   | Update status      | Yes  |
-| DELETE | /api/appointments/:id   | Cancel appointment | Yes  |
+| Username | Password |
+|----------|----------|
+| admin    | admin123 |
 
-## Default Login
+## API Documentation
 
-- **Username:** admin
-- **Password:** admin123
+See [docs/API.md](docs/API.md) for complete API documentation.
+
+## Architecture
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for system architecture diagrams.
+
+## Project Structure
+
+```
+cliniccare/
+├── frontend/            # React + Vite + Tailwind CSS
+│   ├── src/pages/      # Login, Dashboard, Patients, Appointments
+│   ├── Dockerfile      # Multi-stage production build
+│   └── nginx.conf      # Reverse proxy config
+├── backend/             # Express.js REST API
+│   ├── controllers/    # Route handlers
+│   ├── routes/         # API routes
+│   ├── middleware/      # JWT authentication
+│   ├── database/       # Connection, migrations, seeds
+│   └── Dockerfile      # Production build
+├── docker-compose.yml  # Full local stack
+└── README.md
+```
+
+## Screenshots
+
+### Login Page
+Clean, professional login interface with form validation.
+
+### Dashboard
+Overview cards showing total patients and today's appointments.
+
+### Patients
+Full patient management table with search, add, edit, and delete.
+
+### Appointments
+Appointment booking with date picker, status tracking, and completion.
+
+## AWS Deployment
+
+```bash
+# 1. Configure AWS CLI
+aws configure
+
+# 2. Deploy infrastructure (once we add Terraform)
+cd terraform && terraform apply
+
+# 3. Push to GitHub triggers CI/CD
+git push origin main
+```
+
+## License
+
+MIT License — see [LICENSE](LICENSE)
