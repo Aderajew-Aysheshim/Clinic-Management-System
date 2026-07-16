@@ -1,0 +1,46 @@
+version: 0.2
+
+env:
+  variables:
+    BACKEND_ECR: "085777795083.dkr.ecr.us-east-1.amazonaws.com/cliniccare-backend"
+    FRONTEND_ECR: "085777795083.dkr.ecr.us-east-1.amazonaws.com/cliniccare-frontend"
+    ECS_CLUSTER: "cliniccare-cluster"
+    BACKEND_SERVICE: "cliniccare-backend-service"
+    FRONTEND_SERVICE: "cliniccare-frontend-service"
+    AWS_DEFAULT_REGION: "us-east-1"
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 085777795083.dkr.ecr.us-east-1.amazonaws.com
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+
+  build:
+    commands:
+      - echo Building backend Docker image...
+      - cd backend
+      - docker build -t $BACKEND_ECR:$IMAGE_TAG .
+      - docker tag $BACKEND_ECR:$IMAGE_TAG $BACKEND_ECR:latest
+      - cd ../frontend
+      - echo Building frontend Docker image...
+      - docker build -t $FRONTEND_ECR:$IMAGE_TAG .
+      - docker tag $FRONTEND_ECR:$IMAGE_TAG $FRONTEND_ECR:latest
+      - cd ..
+
+  post_build:
+    commands:
+      - echo Pushing backend Docker images...
+      - docker push $BACKEND_ECR:$IMAGE_TAG
+      - docker push $BACKEND_ECR:latest
+      - echo Pushing frontend Docker images...
+      - docker push $FRONTEND_ECR:$IMAGE_TAG
+      - docker push $FRONTEND_ECR:latest
+      - echo Updating ECS services...
+      - aws ecs update-service --cluster $ECS_CLUSTER --service $BACKEND_SERVICE --force-new-deployment --region $AWS_DEFAULT_REGION
+      - aws ecs update-service --cluster $ECS_CLUSTER --service $FRONTEND_SERVICE --force-new-deployment --region $AWS_DEFAULT_REGION
+
+artifacts:
+  files:
+    - '**/*'

@@ -1,0 +1,64 @@
+{
+  "pipeline": {
+    "name": "cliniccare-pipeline",
+    "roleArn": "arn:aws:iam::085777795083:role/CodePipelineServiceRole",
+    "artifactStore": {
+      "type": "S3",
+      "location": "cliniccare-pipeline-artifacts-085777795083"
+    },
+    "stages": [
+      {
+        "name": "Source",
+        "actions": [
+          {
+            "name": "GitHub_Source",
+            "actionTypeId": {
+              "category": "Source",
+              "owner": "AWS",
+              "provider": "CodeStarSourceConnection",
+              "version": "1"
+            },
+            "configuration": {
+              "ConnectionArn": "arn:aws:codestar-connections:us-east-1:085777795083:connection/4ef8f4a9-7054-4148-8809-89c07b67b53a",
+              "FullRepositoryId": "Aderajew-Aysheshim/Clinic-Management-System",
+              "BranchName": "main",
+              "DetectChanges": "true"
+            },
+            "outputArtifacts": [
+              {
+                "name": "source_output"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Build",
+        "actions": [
+          {
+            "name": "Build",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "configuration": {
+              "ProjectName": "cliniccare-build"
+            },
+            "inputArtifacts": [
+              {
+                "name": "source_output"
+              }
+            ],
+            "outputArtifacts": [
+              {
+                "name": "build_output"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

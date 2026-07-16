@@ -1,0 +1,19 @@
+{
+  "family": "db-test",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::085777795083:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "db-test",
+      "image": "postgres:16-alpine",
+      "essential": true,
+      "command": ["sh", "-c", "pg_isready -h cliniccare-db.ckje24gukgjm.us-east-1.rds.amazonaws.com -p 5432 -U postgres && PGPASSWORD=ClinicCare2026 psql -h cliniccare-db.ckje24gukgjm.us-east-1.rds.amazonaws.com -U postgres -c 'SELECT 1;' && echo SUCCESS || echo FAILED"],
+      "environment": [
+        { "name": "PGPASSWORD", "value": "ClinicCare2026" }
+      ]
+    }
+  ]
+}

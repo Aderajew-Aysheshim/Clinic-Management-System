@@ -1,0 +1,47 @@
+{
+  "family": "cliniccare-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::085777795083:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "cliniccare-backend",
+      "image": "085777795083.dkr.ecr.us-east-1.amazonaws.com/cliniccare-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "5000" },
+        { "name": "DB_HOST", "value": "cliniccare-db.ckje24gukgjm.us-east-1.rds.amazonaws.com" },
+        { "name": "DB_PORT", "value": "5432" },
+        { "name": "DB_USER", "value": "postgres" },
+        { "name": "DB_PASSWORD", "value": "ClinicCare2026" },
+        { "name": "DB_NAME", "value": "postgres" },
+        { "name": "JWT_SECRET", "value": "cliniccare-production-secret-key-2026-secure" },
+        { "name": "JWT_EXPIRES_IN", "value": "24h" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/cliniccare-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:5000/api/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

@@ -7,6 +7,7 @@ const pool = new Pool({
   user: config.db.user,
   password: config.db.password,
   database: config.db.name,
+  ssl: config.nodeEnv === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 pool.on('connect', () => {
