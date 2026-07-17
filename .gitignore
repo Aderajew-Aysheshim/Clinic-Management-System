@@ -3,3 +3,10 @@ dist/
 .env
 *.log
 pgdata/
+aws-output.txt
+scripts/backend-logs.json
+backend_logs.json
+backend_logs.txt
+backend_logs2.txt
+logs_raw.json
+get_logs.py

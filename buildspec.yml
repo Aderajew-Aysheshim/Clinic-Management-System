@@ -15,19 +15,16 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 085777795083.dkr.ecr.us-east-1.amazonaws.com
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - IMAGE_TAG=${COMMIT_HASH:-latest}
 
   build:
     commands:
       - echo Building backend Docker image...
-      - cd backend
-      - docker build -t $BACKEND_ECR:$IMAGE_TAG .
+      - docker build -t $BACKEND_ECR:$IMAGE_TAG ./backend
       - docker tag $BACKEND_ECR:$IMAGE_TAG $BACKEND_ECR:latest
-      - cd ../frontend
       - echo Building frontend Docker image...
-      - docker build -t $FRONTEND_ECR:$IMAGE_TAG .
+      - docker build -t $FRONTEND_ECR:$IMAGE_TAG ./frontend
       - docker tag $FRONTEND_ECR:$IMAGE_TAG $FRONTEND_ECR:latest
-      - cd ..
 
   post_build:
     commands:
@@ -37,10 +34,11 @@ phases:
       - echo Pushing frontend Docker images...
       - docker push $FRONTEND_ECR:$IMAGE_TAG
       - docker push $FRONTEND_ECR:latest
-      - echo Updating ECS services...
-      - aws ecs update-service --cluster $ECS_CLUSTER --service $BACKEND_SERVICE --force-new-deployment --region $AWS_DEFAULT_REGION
-      - aws ecs update-service --cluster $ECS_CLUSTER --service $FRONTEND_SERVICE --force-new-deployment --region $AWS_DEFAULT_REGION
+      - echo Creating imagedefinitions files for CodePipeline...
+      - echo '[{"name":"cliniccare-backend","imageUri":"'$BACKEND_ECR:$IMAGE_TAG'"}]' > imagedefinitions-backend.json
+      - echo '[{"name":"cliniccare-frontend","imageUri":"'$FRONTEND_ECR:$IMAGE_TAG'"}]' > imagedefinitions-frontend.json
 
 artifacts:
   files:
-    - '**/*'
+    - imagedefinitions-backend.json
+    - imagedefinitions-frontend.json

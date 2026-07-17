@@ -2,8 +2,8 @@
   "family": "cliniccare-backend",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
+  "cpu": "512",
+  "memory": "1024",
   "executionRoleArn": "arn:aws:iam::085777795083:role/ecsTaskExecutionRole",
   "containerDefinitions": [
     {
@@ -23,9 +23,10 @@
         { "name": "DB_PORT", "value": "5432" },
         { "name": "DB_USER", "value": "postgres" },
         { "name": "DB_PASSWORD", "value": "ClinicCare2026" },
-        { "name": "DB_NAME", "value": "postgres" },
+        { "name": "DB_NAME", "value": "cliniccare" },
         { "name": "JWT_SECRET", "value": "cliniccare-production-secret-key-2026-secure" },
-        { "name": "JWT_EXPIRES_IN", "value": "24h" }
+        { "name": "JWT_EXPIRES_IN", "value": "24h" },
+        { "name": "AWS_XRAY_DAEMON_ADDRESS", "value": "localhost:2000" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -41,6 +42,25 @@
         "timeout": 5,
         "retries": 3,
         "startPeriod": 60
+      }
+    },
+    {
+      "name": "xray-daemon",
+      "image": "public.ecr.aws/xray/aws-xray-daemon:latest",
+      "essential": false,
+      "portMappings": [
+        {
+          "containerPort": 2000,
+          "protocol": "udp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/cliniccare-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "xray"
+        }
       }
     }
   ]

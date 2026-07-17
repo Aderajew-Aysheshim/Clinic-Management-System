@@ -58,6 +58,54 @@
             ]
           }
         ]
+      },
+      {
+        "name": "Deploy_Backend",
+        "actions": [
+          {
+            "name": "Deploy_Backend",
+            "actionTypeId": {
+              "category": "Deploy",
+              "owner": "AWS",
+              "provider": "ECS",
+              "version": "1"
+            },
+            "configuration": {
+              "ClusterName": "cliniccare-cluster",
+              "ServiceName": "cliniccare-backend-service",
+              "FileName": "imagedefinitions-backend.json"
+            },
+            "inputArtifacts": [
+              {
+                "name": "build_output"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Deploy_Frontend",
+        "actions": [
+          {
+            "name": "Deploy_Frontend",
+            "actionTypeId": {
+              "category": "Deploy",
+              "owner": "AWS",
+              "provider": "ECS",
+              "version": "1"
+            },
+            "configuration": {
+              "ClusterName": "cliniccare-cluster",
+              "ServiceName": "cliniccare-frontend-service",
+              "FileName": "imagedefinitions-frontend.json"
+            },
+            "inputArtifacts": [
+              {
+                "name": "build_output"
+              }
+            ]
+          }
+        ]
       }
     ]
   }

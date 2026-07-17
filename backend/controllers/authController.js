@@ -9,7 +9,10 @@ exports.login = async (req, res) => {
     return res.status(400).json({ error: 'Username and password required' });
   }
   try {
-    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    const result = await pool.query(
+      'SELECT id, username, password, role, fullname FROM users WHERE username = $1',
+      [username]
+    );
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -18,8 +21,12 @@ exports.login = async (req, res) => {
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    const token = jwt.sign({ id: user.id, username: user.username }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
-    res.json({ token, username: user.username });
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role, fullname: user.fullname },
+      config.jwtSecret,
+      { expiresIn: config.jwtExpiresIn }
+    );
+    res.json({ token, username: user.username, role: user.role, fullname: user.fullname });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }

@@ -1,21 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { getAppointments, getPatients, createAppointment, updateAppointment, deleteAppointment, getUsers } from '../services/api';
+import { getAppointments, createAppointment, deleteAppointment, getPatients } from '../services/api';
 
-export default function Appointments() {
-  const { role } = useAuth();
+export default function MyAppointments() {
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
-  const [doctors, setDoctors] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ patient_id: '', doctor_id: '', appointment_date: '', reason: '' });
+  const [form, setForm] = useState({ patient_id: '', appointment_date: '', reason: '' });
   const [loading, setLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  const canBook = role === 'admin' || role === 'receptionist' || role === 'patient';
-  const canAssignDoctor = role === 'admin';
-  const canDelete = role === 'admin' || role === 'receptionist' || role === 'patient';
-  const canComplete = role === 'admin' || role === 'receptionist' || role === 'doctor';
 
   const fetchAppointments = async () => {
     try {
@@ -35,27 +26,10 @@ export default function Appointments() {
     }
   };
 
-  const fetchDoctors = async () => {
-    if (canAssignDoctor) {
-      try {
-        const res = await getUsers();
-        setDoctors(res.data.filter(u => u.role === 'doctor'));
-      } catch {
-        // error handled silently
-      }
-    }
-  };
-
   useEffect(() => {
     fetchAppointments();
     fetchPatients();
-    fetchDoctors();
   }, []);
-
-  const openBook = () => {
-    setForm({ patient_id: '', doctor_id: '', appointment_date: '', reason: '' });
-    setShowModal(true);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,9 +37,9 @@ export default function Appointments() {
     try {
       const payload = { ...form };
       if (form.patient_id) payload.patient_id = parseInt(form.patient_id);
-      if (form.doctor_id) payload.doctor_id = parseInt(form.doctor_id);
       await createAppointment(payload);
       setShowModal(false);
+      setForm({ patient_id: '', appointment_date: '', reason: '' });
       fetchAppointments();
     } catch (err) {
       alert(err.response?.data?.error || 'Error booking appointment');
@@ -74,22 +48,13 @@ export default function Appointments() {
     }
   };
 
-  const handleStatus = async (id, status) => {
-    try {
-      await updateAppointment(id, { status });
-      fetchAppointments();
-    } catch {
-      alert('Error updating appointment');
-    }
-  };
-
-  const handleDelete = async (id) => {
+  const handleCancel = async (id) => {
     if (!confirm('Are you sure you want to cancel this appointment?')) return;
     try {
       await deleteAppointment(id);
       fetchAppointments();
     } catch {
-      alert('Error deleting appointment');
+      alert('Error cancelling appointment');
     }
   };
 
@@ -103,38 +68,20 @@ export default function Appointments() {
     return <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${styles[status] || styles.Pending}`}>{status || 'Pending'}</span>;
   };
 
-  const filtered = appointments.filter((a) => statusFilter === 'all' || a.status === statusFilter);
-
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Appointments</h1>
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-          >
-            <option value="all">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
-            <option value="In Progress">In Progress</option>
-          </select>
-          {canBook && (
-            <button onClick={openBook} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm whitespace-nowrap">
-              + Book
-            </button>
-          )}
-        </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">My Appointments</h1>
+        <button onClick={() => { setForm({ patient_id: '', appointment_date: '', reason: '' }); setShowModal(true); }} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm whitespace-nowrap">
+          + Book Appointment
+        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px]">
+          <table className="w-full min-w-[480px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Reason</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -142,28 +89,20 @@ export default function Appointments() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filtered.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">No appointments found</td></tr>
+              {appointments.length === 0 ? (
+                <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-400">No appointments found</td></tr>
               ) : (
-                filtered.map((a) => (
+                appointments.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50">
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm font-medium text-gray-900">
-                      <div>{a.patient_name}</div>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900">
+                      <div className="whitespace-nowrap">{new Date(a.appointment_date).toLocaleString()}</div>
                       <div className="text-xs text-gray-500 sm:hidden mt-0.5 truncate max-w-[150px]">{a.reason}</div>
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-600 whitespace-nowrap">{new Date(a.appointment_date).toLocaleDateString()}</td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-600 hidden sm:table-cell">{a.reason}</td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4">{getStatusBadge(a.status)}</td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-right text-sm">
                       {a.status === 'Pending' && (
-                        <div className="flex flex-wrap justify-end gap-1 sm:gap-2">
-                          {canComplete && (
-                            <button onClick={() => handleStatus(a.id, 'Completed')} className="text-green-600 hover:text-green-800 font-medium px-1">Done</button>
-                          )}
-                          {canDelete && (
-                            <button onClick={() => handleDelete(a.id)} className="text-red-600 hover:text-red-800 font-medium px-1">Cancel</button>
-                          )}
-                        </div>
+                        <button onClick={() => handleCancel(a.id)} className="text-red-600 hover:text-red-800 font-medium">Cancel</button>
                       )}
                     </td>
                   </tr>
@@ -180,28 +119,6 @@ export default function Appointments() {
             <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Book Appointment</h2>
             <form onSubmit={handleSubmit}>
               <div className="space-y-3 sm:space-y-4">
-                {role !== 'patient' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Patient</label>
-                    <select value={form.patient_id} onChange={(e) => setForm({ ...form, patient_id: e.target.value })} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm" required>
-                      <option value="">Select Patient</option>
-                      {patients.map((p) => (
-                        <option key={p.id} value={p.id}>{p.fullname}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                {canAssignDoctor && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign Doctor</label>
-                    <select value={form.doctor_id} onChange={(e) => setForm({ ...form, doctor_id: e.target.value })} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
-                      <option value="">Select Doctor (optional)</option>
-                      {doctors.map((d) => (
-                        <option key={d.id} value={d.id}>{d.fullname || d.username}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
                   <input type="datetime-local" value={form.appointment_date} onChange={(e) => setForm({ ...form, appointment_date: e.target.value })} className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm" required />

@@ -28,10 +28,16 @@ function waitForDB(retries = 30, delay = 2000) {
 async function initDB() {
   try {
     await waitForDB();
-    const migrationPath = path.join(__dirname, 'database', 'migrations', '001_init.sql');
-    const migration = fs.readFileSync(migrationPath, 'utf8');
-    await pool.query(migration);
-    console.log('Database migrations completed');
+    const migrationsDir = path.join(__dirname, 'database', 'migrations');
+    const migrationFiles = fs.readdirSync(migrationsDir)
+      .filter(f => f.endsWith('.sql'))
+      .sort();
+    for (const file of migrationFiles) {
+      const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+      await pool.query(sql);
+      console.log(`Migration ${file} completed`);
+    }
+    console.log('All database migrations completed');
     await seed();
   } catch (err) {
     console.error('Database initialization error:', err.message);
