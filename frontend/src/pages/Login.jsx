@@ -7,7 +7,7 @@ const demoAccounts = [
   { username: 'dr.smith', role: 'doctor', label: 'Doctor', color: 'bg-blue-100 text-blue-700' },
   { username: 'reception', role: 'receptionist', label: 'Receptionist', color: 'bg-green-100 text-green-700' },
   { username: 'pharmacy', role: 'pharmacist', label: 'Pharmacist', color: 'bg-purple-100 text-purple-700' },
-  { username: 'patient1', role: 'patient', label: 'Patient', color: 'bg-yellow-100 text-yellow-700' },
+  { username: 'aderajew', role: 'patient', label: 'Patient', color: 'bg-yellow-100 text-yellow-700' },
 ];
 
 export default function Login() {

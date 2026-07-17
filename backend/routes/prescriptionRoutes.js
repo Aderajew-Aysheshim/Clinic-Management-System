@@ -4,9 +4,9 @@ const prescriptionController = require('../controllers/prescriptionController');
 const auth = require('../middleware/auth');
 const authorize = require('../middleware/role');
 
-router.get('/patient/:id', auth, authorize('doctor', 'pharmacist', 'patient'), prescriptionController.getByPatient);
-router.get('/', auth, authorize('pharmacist'), prescriptionController.getAll);
-router.post('/', auth, authorize('doctor'), prescriptionController.create);
-router.put('/:id', auth, authorize('pharmacist'), prescriptionController.update);
+router.get('/patient/:id', auth, authorize('admin', 'doctor', 'pharmacist', 'patient'), prescriptionController.getByPatient);
+router.get('/', auth, authorize('admin', 'doctor', 'pharmacist', 'patient'), prescriptionController.getAll);
+router.post('/', auth, authorize('admin', 'doctor'), prescriptionController.create);
+router.put('/:id', auth, authorize('admin', 'pharmacist'), prescriptionController.update);
 
 module.exports = router;

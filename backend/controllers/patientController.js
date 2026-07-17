@@ -76,25 +76,87 @@ exports.dashboard = async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
 
+    if (role === 'admin') {
+      const [patients, totalAppointments, todayAppointments, pendingAppointments, totalUsers, totalPrescriptions] = await Promise.all([
+        pool.query('SELECT COUNT(*) FROM patients'),
+        pool.query('SELECT COUNT(*) FROM appointments'),
+        pool.query('SELECT COUNT(*) FROM appointments WHERE appointment_date::date = $1', [today]),
+        pool.query("SELECT COUNT(*) FROM appointments WHERE status = 'Pending'"),
+        pool.query('SELECT COUNT(*) FROM users'),
+        pool.query('SELECT COUNT(*) FROM prescriptions'),
+      ]);
+      return res.json({
+        totalPatients: parseInt(patients.rows[0].count),
+        totalAppointments: parseInt(totalAppointments.rows[0].count),
+        todayAppointments: parseInt(todayAppointments.rows[0].count),
+        pendingAppointments: parseInt(pendingAppointments.rows[0].count),
+        totalUsers: parseInt(totalUsers.rows[0].count),
+        totalPrescriptions: parseInt(totalPrescriptions.rows[0].count),
+      });
+    }
+
     if (role === 'doctor') {
-      const patients = await pool.query(
-        `SELECT COUNT(DISTINCT p.id) FROM patients p
-         JOIN appointments a ON p.id = a.patient_id
-         WHERE a.doctor_id = $1`,
-        [id]
-      );
-      const appointments = await pool.query(
-        'SELECT COUNT(*) FROM appointments WHERE doctor_id = $1 AND appointment_date = $2',
-        [id, today]
-      );
-      const totalAppointments = await pool.query(
-        'SELECT COUNT(*) FROM appointments WHERE doctor_id = $1',
-        [id]
-      );
+      const [patients, todayAppointments, pendingPrescriptions, completedToday] = await Promise.all([
+        pool.query(
+          `SELECT COUNT(DISTINCT p.id) FROM patients p
+           JOIN appointments a ON p.id = a.patient_id
+           WHERE a.doctor_id = $1`,
+          [id]
+        ),
+        pool.query(
+          'SELECT COUNT(*) FROM appointments WHERE doctor_id = $1 AND appointment_date::date = $2',
+          [id, today]
+        ),
+        pool.query(
+          "SELECT COUNT(*) FROM prescriptions WHERE doctor_id = $1 AND status = 'Active'",
+          [id]
+        ),
+        pool.query(
+          "SELECT COUNT(*) FROM appointments WHERE doctor_id = $1 AND appointment_date::date = $2 AND status = 'Completed'",
+          [id, today]
+        ),
+      ]);
       return res.json({
         myPatients: parseInt(patients.rows[0].count),
-        todayAppointments: parseInt(appointments.rows[0].count),
-        totalAppointments: parseInt(totalAppointments.rows[0].count),
+        todayAppointments: parseInt(todayAppointments.rows[0].count),
+        pendingPrescriptions: parseInt(pendingPrescriptions.rows[0].count),
+        completedToday: parseInt(completedToday.rows[0].count),
+      });
+    }
+
+    if (role === 'receptionist') {
+      const [todayAppointments, totalPatients, newBookingsToday, pendingAppointments] = await Promise.all([
+        pool.query(
+          'SELECT COUNT(*) FROM appointments WHERE appointment_date::date = $1',
+          [today]
+        ),
+        pool.query('SELECT COUNT(*) FROM patients'),
+        pool.query(
+          'SELECT COUNT(*) FROM appointments WHERE created_at::date = $1',
+          [today]
+        ),
+        pool.query(
+          "SELECT COUNT(*) FROM appointments WHERE status = 'Pending'"
+        ),
+      ]);
+      return res.json({
+        todayAppointments: parseInt(todayAppointments.rows[0].count),
+        totalPatients: parseInt(totalPatients.rows[0].count),
+        newBookingsToday: parseInt(newBookingsToday.rows[0].count),
+        pendingAppointments: parseInt(pendingAppointments.rows[0].count),
+      });
+    }
+
+    if (role === 'pharmacist') {
+      const [activePrescriptions, todayPrescriptions, pendingReview] = await Promise.all([
+        pool.query("SELECT COUNT(*) FROM prescriptions WHERE status = 'Active'"),
+        pool.query("SELECT COUNT(*) FROM prescriptions WHERE prescribed_date::date = $1", [today]),
+        pool.query("SELECT COUNT(*) FROM prescriptions WHERE status = 'Pending'"),
+      ]);
+      return res.json({
+        activePrescriptions: parseInt(activePrescriptions.rows[0].count),
+        todayPrescriptions: parseInt(todayPrescriptions.rows[0].count),
+        pendingReview: parseInt(pendingReview.rows[0].count),
       });
     }
 
@@ -104,48 +166,33 @@ exports.dashboard = async (req, res) => {
         [id]
       );
       if (patientResult.rows.length === 0) {
-        return res.json({ appointments: 0, prescriptions: 0 });
+        return res.json({ upcomingAppointments: 0, myPrescriptions: 0, completedVisits: 0 });
       }
       const patientId = patientResult.rows[0].id;
-      const appointments = await pool.query(
-        'SELECT COUNT(*) FROM appointments WHERE patient_id = $1',
-        [patientId]
-      );
-      const prescriptions = await pool.query(
-        "SELECT COUNT(*) FROM prescriptions WHERE patient_id = $1 AND status = 'Active'",
-        [patientId]
-      );
+      const [upcomingAppointments, myPrescriptions, completedVisits] = await Promise.all([
+        pool.query(
+          "SELECT COUNT(*) FROM appointments WHERE patient_id = $1 AND appointment_date::date >= $2 AND status != 'Cancelled'",
+          [patientId, today]
+        ),
+        pool.query(
+          "SELECT COUNT(*) FROM prescriptions WHERE patient_id = $1 AND status = 'Active'",
+          [patientId]
+        ),
+        pool.query(
+          "SELECT COUNT(*) FROM appointments WHERE patient_id = $1 AND status = 'Completed'",
+          [patientId]
+        ),
+      ]);
       return res.json({
-        appointments: parseInt(appointments.rows[0].count),
-        activePrescriptions: parseInt(prescriptions.rows[0].count),
+        upcomingAppointments: parseInt(upcomingAppointments.rows[0].count),
+        myPrescriptions: parseInt(myPrescriptions.rows[0].count),
+        completedVisits: parseInt(completedVisits.rows[0].count),
       });
     }
 
-    if (role === 'pharmacist') {
-      const activePrescriptions = await pool.query(
-        "SELECT COUNT(*) FROM prescriptions WHERE status = 'Active'"
-      );
-      const totalPrescriptions = await pool.query(
-        'SELECT COUNT(*) FROM prescriptions'
-      );
-      return res.json({
-        activePrescriptions: parseInt(activePrescriptions.rows[0].count),
-        totalPrescriptions: parseInt(totalPrescriptions.rows[0].count),
-      });
-    }
-
-    const patients = await pool.query('SELECT COUNT(*) FROM patients');
-    const appointments = await pool.query(
-      'SELECT COUNT(*) FROM appointments WHERE appointment_date = $1',
-      [today]
-    );
-    const totalUsers = await pool.query('SELECT COUNT(*) FROM users');
-    res.json({
-      totalPatients: parseInt(patients.rows[0].count),
-      todayAppointments: parseInt(appointments.rows[0].count),
-      totalUsers: parseInt(totalUsers.rows[0].count),
-    });
+    res.json({ totalPatients: 0, todayAppointments: 0, totalUsers: 0 });
   } catch (err) {
+    console.error('Dashboard error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 };

@@ -1,14 +1,41 @@
 const pool = require('../database/db');
 
 exports.getAll = async (req, res) => {
+  const { role, id } = req.user;
   try {
-    const result = await pool.query(
-      `SELECT pr.*, p.fullname as patient_name, u.fullname as doctor_name
-       FROM prescriptions pr
-       JOIN patients p ON pr.patient_id = p.id
-       LEFT JOIN users u ON pr.doctor_id = u.id
-       ORDER BY pr.prescribed_date DESC`
-    );
+    let query;
+    let params = [];
+
+    if (role === 'patient') {
+      const patientResult = await pool.query('SELECT id FROM patients WHERE user_id = $1', [id]);
+      if (patientResult.rows.length === 0) {
+        return res.json([]);
+      }
+      const patientId = patientResult.rows[0].id;
+      query = `SELECT pr.*, p.fullname as patient_name, u.fullname as doctor_name
+               FROM prescriptions pr
+               JOIN patients p ON pr.patient_id = p.id
+               LEFT JOIN users u ON pr.doctor_id = u.id
+               WHERE pr.patient_id = $1
+               ORDER BY pr.prescribed_date DESC`;
+      params = [patientId];
+    } else if (role === 'doctor') {
+      query = `SELECT pr.*, p.fullname as patient_name, u.fullname as doctor_name
+               FROM prescriptions pr
+               JOIN patients p ON pr.patient_id = p.id
+               LEFT JOIN users u ON pr.doctor_id = u.id
+               WHERE pr.doctor_id = $1
+               ORDER BY pr.prescribed_date DESC`;
+      params = [id];
+    } else {
+      query = `SELECT pr.*, p.fullname as patient_name, u.fullname as doctor_name
+               FROM prescriptions pr
+               JOIN patients p ON pr.patient_id = p.id
+               LEFT JOIN users u ON pr.doctor_id = u.id
+               ORDER BY pr.prescribed_date DESC`;
+    }
+
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

@@ -21,6 +21,19 @@ async function seed() {
       [hashedPassword]
     );
 
+    const userResult = await pool.query(
+      "SELECT id FROM users WHERE username = 'aderajew'"
+    );
+    if (userResult.rows.length > 0) {
+      const userId = userResult.rows[0].id;
+      await pool.query(
+        `INSERT INTO patients (fullname, gender, age, phone, address, user_id)
+         SELECT 'Aderajew Aysheshim', 'Male', 25, '+251911000005', 'Addis Ababa, Ethiopia', $1
+         WHERE NOT EXISTS (SELECT 1 FROM patients WHERE user_id = $1)`,
+        [userId]
+      );
+    }
+
     console.log('Users seeded successfully');
   } catch (err) {
     console.error('Seeding error:', err.message);

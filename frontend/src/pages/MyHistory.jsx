@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { getPatientHistory } from '../services/api';
 
 export default function MyHistory() {
+  const { username } = useAuth();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const username = localStorage.getItem('username');
-        const res = await getPatientHistory(username);
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const res = await getPatientHistory(payload.id);
         setHistory(res.data);
       } catch {
         // error handled silently
@@ -18,7 +22,7 @@ export default function MyHistory() {
       }
     };
     fetchHistory();
-  }, []);
+  }, [username]);
 
   if (loading) {
     return (

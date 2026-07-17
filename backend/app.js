@@ -1,4 +1,3 @@
-const AWSXRay = require('aws-xray-sdk-core');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -11,10 +10,6 @@ const prescriptionRoutes = require('./routes/prescriptionRoutes');
 
 const app = express();
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(AWSXRay.express.openSegment('ClinicCare-API'));
-}
-
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({
@@ -25,17 +20,10 @@ app.use(cors({
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 200,
   message: { error: 'Too many requests, please try again later.' },
 });
 app.use('/api/', limiter);
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { error: 'Too many login attempts, please try again later.' },
-});
-app.use('/api/auth/login', authLimiter);
 
 app.use(express.json({ limit: '10kb' }));
 
@@ -55,18 +43,10 @@ app.use((req, res) => {
 
 app.use((err, req, res, _next) => {
   console.error(err.stack);
-  if (process.env.NODE_ENV === 'production' && req.segment) {
-    req.segment.addError(err);
-    req.segment.close();
-  }
   const statusCode = err.statusCode || 500;
   res.status(statusCode).json({
     error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
   });
 });
-
-if (process.env.NODE_ENV === 'production') {
-  app.use(AWSXRay.express.closeSegment());
-}
 
 module.exports = app;

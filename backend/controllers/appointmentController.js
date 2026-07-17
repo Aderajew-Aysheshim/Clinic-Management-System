@@ -35,7 +35,19 @@ exports.getAll = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
-  const { patient_id, appointment_date, reason, doctor_id } = req.body;
+  let { patient_id, appointment_date, reason, doctor_id } = req.body;
+
+  if (req.user.role === 'patient') {
+    const patientResult = await pool.query(
+      'SELECT id FROM patients WHERE user_id = $1',
+      [req.user.id]
+    );
+    if (patientResult.rows.length === 0) {
+      return res.status(400).json({ error: 'No patient profile found. Please contact reception.' });
+    }
+    patient_id = patientResult.rows[0].id;
+  }
+
   if (!patient_id || !appointment_date || !reason) {
     return res.status(400).json({ error: 'All fields are required' });
   }
@@ -95,14 +107,14 @@ exports.getToday = async (req, res) => {
       query = `SELECT a.*, p.fullname as patient_name
                FROM appointments a
                JOIN patients p ON a.patient_id = p.id
-               WHERE a.appointment_date = $1 AND a.doctor_id = $2
+               WHERE a.appointment_date::date = $1 AND a.doctor_id = $2
                ORDER BY a.id DESC`;
       params.push(id);
     } else {
       query = `SELECT a.*, p.fullname as patient_name
                FROM appointments a
                JOIN patients p ON a.patient_id = p.id
-               WHERE a.appointment_date = $1
+               WHERE a.appointment_date::date = $1
                ORDER BY a.id DESC`;
     }
 
