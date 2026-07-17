@@ -24,4 +24,4 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO users (username, password) VALUES ('admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi') ON CONFLICT (username) DO NOTHING;
+INSERT INTO users (username, password) VALUES ('admin', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m') ON CONFLICT (username) DO NOTHING;

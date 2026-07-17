@@ -1,6 +1,7 @@
 services:
-  db:
+  cliniccare-db:
     image: postgres:16-alpine
+    container_name: cliniccare-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -15,12 +16,13 @@ services:
       timeout: 5s
       retries: 10
 
-  backend:
+  cliniccare-backend:
     build: ./backend
+    container_name: cliniccare-backend
     ports:
       - "5000:5000"
     environment:
-      DB_HOST: db
+      DB_HOST: cliniccare-db
       DB_PORT: 5432
       DB_USER: postgres
       DB_PASSWORD: postgres
@@ -28,15 +30,23 @@ services:
       JWT_SECRET: cliniccare_secret_key_2026
       PORT: 5000
     depends_on:
-      db:
+      cliniccare-db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:5000/api/health', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  frontend:
+  cliniccare-frontend:
     build: ./frontend
+    container_name: cliniccare-frontend
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      cliniccare-backend:
+        condition: service_healthy
 
 volumes:
   pgdata:
