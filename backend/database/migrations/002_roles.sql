@@ -21,9 +21,9 @@ CREATE TABLE IF NOT EXISTS prescriptions (
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS doctor_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
 
 INSERT INTO users (username, password, role, fullname, email, phone) VALUES
-  ('admin', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m', 'admin', 'System Admin', 'admin@clinic.com', '+1234567890'),
-  ('dr.smith', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m', 'doctor', 'Dr. John Smith', 'smith@clinic.com', '+1234567891'),
-  ('reception', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m', 'receptionist', 'Sarah Reception', 'sarah@clinic.com', '+1234567892'),
-  ('pharmacy', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m', 'pharmacist', 'Mike Pharmacist', 'mike@clinic.com', '+1234567893'),
-  ('patient1', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m', 'patient', 'Ahmed Patient', 'ahmed@patient.com', '+1234567894')
-ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, fullname = EXCLUDED.fullname;
+  ('admin', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m', 'admin', 'System Admin', 'admin@clinic.com', '+251911000001'),
+  ('dr.smith', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m', 'doctor', 'Dr. John Smith', 'smith@clinic.com', '+251911000002'),
+  ('reception', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m', 'receptionist', 'Sarah Reception', 'sarah@clinic.com', '+251911000003'),
+  ('pharmacy', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m', 'pharmacist', 'Mike Pharmacist', 'mike@clinic.com', '+251911000004'),
+  ('aderajew', '$2b$10$r0p6N7PhMHLzcZMHzhcfneC/Enh/7W68R2GhB3OR.jru1qRvrbH6m', 'patient', 'Aderajew Aysheshim', 'aderajew@patient.com', '+251911000005')
+ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, fullname = EXCLUDED.fullname, email = EXCLUDED.email, phone = EXCLUDED.phone;

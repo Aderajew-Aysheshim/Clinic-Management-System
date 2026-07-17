@@ -7,12 +7,17 @@ async function seed() {
 
     await pool.query(
       `INSERT INTO users (username, password, role, fullname, email, phone) VALUES
-        ('admin', $1, 'admin', 'System Admin', 'admin@clinic.com', '+1234567890'),
-        ('dr.smith', $1, 'doctor', 'Dr. John Smith', 'smith@clinic.com', '+1234567891'),
-        ('reception', $1, 'receptionist', 'Sarah Reception', 'sarah@clinic.com', '+1234567892'),
-        ('pharmacy', $1, 'pharmacist', 'Mike Pharmacist', 'mike@clinic.com', '+1234567893'),
-        ('patient1', $1, 'patient', 'Ahmed Patient', 'ahmed@patient.com', '+1234567894')
-      ON CONFLICT (username) DO UPDATE SET role = EXCLUDED.role, fullname = EXCLUDED.fullname`,
+        ('admin', $1, 'admin', 'System Admin', 'admin@clinic.com', '+251911000001'),
+        ('dr.smith', $1, 'doctor', 'Dr. John Smith', 'smith@clinic.com', '+251911000002'),
+        ('reception', $1, 'receptionist', 'Sarah Reception', 'sarah@clinic.com', '+251911000003'),
+        ('pharmacy', $1, 'pharmacist', 'Mike Pharmacist', 'mike@clinic.com', '+251911000004'),
+        ('aderajew', $1, 'patient', 'Aderajew Aysheshim', 'aderajew@patient.com', '+251911000005')
+      ON CONFLICT (username) DO UPDATE SET 
+        password = EXCLUDED.password, 
+        role = EXCLUDED.role, 
+        fullname = EXCLUDED.fullname,
+        email = EXCLUDED.email,
+        phone = EXCLUDED.phone`,
       [hashedPassword]
     );
 
